@@ -1,0 +1,22 @@
+version: '3'
+tasks:
+  run-local:
+    cmds:
+      - docker build --load -t ghcr.io/r2k1/kupilot:alpha .
+      - docker run --rm -it -e OPENAI_API_KEY=$OPENAI_API_KEY -e KUBECONFIG=/.kube/config -v ~/.kube:/.kube ghcr.io/r2k1/kupilot:alpha kupilot
+  docker-push:
+    cmds:
+      - echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
+      - docker build --push -t ghcr.io/r2k1/kupilot:alpha .
+  apply:
+    cmds:
+      - cat kube.yaml | envsubst '$OPENAI_API_KEY' | kubectl apply --prune -l "app=kupilot" -f -
+      - kubectl -n kupilot rollout restart deployment/kupilot
+  deploy:
+    cmds:
+      - task: docker-push
+      - task: apply
+  connect:
+    cmds:
+      - kubectl -n kupilot exec -it $(kubectl get pods -n kupilot -l app=kupilot -o jsonpath='{.items[0].metadata.name}') -- kupilot
+

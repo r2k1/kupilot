@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kupilot
+  labels:
+    app: kupilot
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kupilot
+  namespace: kupilot
+  labels:
+    app: kupilot
+type: Opaque
+stringData:
+  OPENAI_API_KEY: "$OPENAI_API_KEY" # REPLACE_ME
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kupilot
+  namespace: kupilot
+  labels:
+    app: kupilot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kupilot
+  template:
+    metadata:
+      labels:
+        app: kupilot
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: kupilot
+          image: ghcr.io/r2k1/kupilot:alpha
+          imagePullPolicy: Always
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kupilot
+                  key: OPENAI_API_KEY
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kupilot
+  namespace: kupilot
+  labels:
+    app: kupilot
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kupilot
+  labels:
+    app: kupilot
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kupilot
+  namespace: kupilot
+  labels:
+    app: kupilot
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: kupilot
+roleRef:
+  kind: ClusterRole
+  name: kupilot
+  apiGroup: rbac.authorization.k8s.io
