@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -57,7 +58,16 @@ func (k *Kupilot) askGPT(ctx context.Context) error {
 	resp, err := k.openai.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
 		Model:    openai.GPT4o,
 		Messages: k.msgs,
-		Tools:    k.tools.Schema(),
+		Tools: []openai.Tool{
+			{
+				Type: openai.ToolTypeFunction,
+				Function: &openai.FunctionDefinition{
+					Name:        "script",
+					Description: "Run a bash script, full output is printed for the user but can be truncated for the agent",
+					Parameters:  json.RawMessage(ToolsSchema),
+				},
+			},
+		},
 	})
 	s.Stop()
 	if err != nil {

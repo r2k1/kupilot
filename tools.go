@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/invopop/jsonschema"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -22,21 +21,10 @@ func NewTools() *Tools {
 	}
 }
 
-func (t *Tools) Schema() []openai.Tool {
-	schema, err := jsonschema.Reflect(&ScriptParams{}).Definitions["ScriptParams"].MarshalJSON()
-	if err != nil {
-		panic(err)
-	}
-	return []openai.Tool{
-		{
-			Type: openai.ToolTypeFunction,
-			Function: &openai.FunctionDefinition{
-				Name:        "script",
-				Description: "Run a bash script, full output is printed for the user but can be truncated for the agent",
-				Parameters:  json.RawMessage(schema),
-			},
-		},
-	}
+var ToolsSchema = schema()
+
+func schema() []byte {
+	return []byte(`{"properties":{"script":{"type":"string","description":"The bash script to run"}},"additionalProperties":false,"type":"object","required":["script"]}`)
 }
 
 func (t *Tools) Call(requests []openai.ToolCall) ([]openai.ChatCompletionMessage, error) {
