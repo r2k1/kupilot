@@ -10,9 +10,10 @@ import (
 )
 
 func main() {
-	err := do(context.Background())
+	t := NewTerminal(os.Stdin, os.Stdout)
+	err := do(context.Background(), t)
 	if err != nil {
-		fmt.Println(err)
+		t.WriteError(err.Error())
 		os.Exit(1)
 	}
 }
@@ -27,16 +28,16 @@ func (s SecretString) String() string {
 	return "[REDACTED]"
 }
 
-func do(ctx context.Context) error {
+func do(ctx context.Context, terminal *Terminal) error {
 	var cfg config
 	if err := env.Parse(&cfg); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
-	tools := NewTools()
+	tools := NewTools(terminal)
 
 	client := openai.NewClient(string(cfg.OpenAIKey))
 
-	ku := NewKupilot(tools, client)
+	ku := NewKupilot(tools, client, terminal)
 	err := ku.Run(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to run kupilot: %w", err)

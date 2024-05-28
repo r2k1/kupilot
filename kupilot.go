@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -14,28 +12,33 @@ import (
 )
 
 type Kupilot struct {
-	tools  *Tools
-	openai *openai.Client
-	msgs   []openai.ChatCompletionMessage
+	tools    *Tools
+	openai   *openai.Client
+	msgs     []openai.ChatCompletionMessage
+	terminal *Terminal
 }
 
 var SysMessage = openai.ChatCompletionMessage{
-	Role:    openai.ChatMessageRoleSystem,
-	Content: "You are a kubernetes expert, your job is to help users with their kubernetes questions. You can ask for more information if needed. You can also ask for clarification if you are unsure about something. You have read access to the kubernetes cluster. Be concise. Output of every function call is printed to the user, don't repeat it. If output is truncated you can modify the script to limit the scope. Respond in plaint text, don't use markdown",
+	Role: openai.ChatMessageRoleSystem,
+	Content: `You are a kubernetes expert, your job is to help users with their kubernetes questions.
+You can ask for more information if needed. You can also ask for clarification if you are unsure about something.
+You have read access to the kubernetes cluster. Be concise. Output of every function call is printed to the user, don't repeat it. 
+If output is truncated you can modify the script to limit the scope of the output.`,
 }
 
-func NewKupilot(tools *Tools, aiclient *openai.Client) *Kupilot {
+func NewKupilot(tools *Tools, aiclient *openai.Client, terminal *Terminal) *Kupilot {
 	return &Kupilot{
-		tools:  tools,
-		openai: aiclient,
-		msgs:   []openai.ChatCompletionMessage{SysMessage},
+		tools:    tools,
+		openai:   aiclient,
+		msgs:     []openai.ChatCompletionMessage{SysMessage},
+		terminal: terminal,
 	}
 }
 
 func (k *Kupilot) Run(ctx context.Context) error {
-	fmt.Println("How can I help you?")
+	k.terminal.Write("Hello! Kupilot here, how can I help you?\n")
 	for {
-		userInput, err := read()
+		userInput, err := k.terminal.Read()
 		if err != nil {
 			return err
 		}
@@ -71,16 +74,16 @@ func (k *Kupilot) askGPT(ctx context.Context) error {
 	})
 	s.Stop()
 	if err != nil {
-		return fmt.Errorf("failed to create chat completion stream: %w", err)
+		return fmt.Errorf("failed to submit openai request: %w", err)
 	}
 
 	agentMsg := resp.Choices[0].Message
 
 	out, err := glamour.Render(agentMsg.Content, "dark")
 	if err != nil {
-		fmt.Println(agentMsg.Content)
+		k.terminal.Write(agentMsg.Content)
 	} else {
-		fmt.Print(out)
+		k.terminal.Write(out)
 	}
 
 	k.msgs = append(k.msgs, agentMsg)
@@ -95,18 +98,4 @@ func (k *Kupilot) askGPT(ctx context.Context) error {
 	}
 	k.msgs = append(k.msgs, toolMsgs...)
 	return k.askGPT(ctx)
-}
-
-func read() (string, error) {
-	fmt.Printf("\n> ")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	if err := scanner.Err(); err != nil {
-		return "", fmt.Errorf("failed to read user input: %w", err)
-	}
-	userInput := scanner.Text()
-	if userInput == "exit" || userInput == "quit" {
-		os.Exit(0)
-	}
-	return userInput, nil
 }

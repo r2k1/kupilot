@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -13,11 +11,13 @@ import (
 
 type Tools struct {
 	skipExecutionConfirmation bool
+	terminal                  *Terminal
 }
 
-func NewTools() *Tools {
+func NewTools(terminal *Terminal) *Tools {
 	return &Tools{
 		skipExecutionConfirmation: false,
+		terminal:                  terminal,
 	}
 }
 
@@ -47,11 +47,10 @@ func (t *Tools) execScript(params ScriptParams) (string, error) {
 
 	cmd := exec.Command("bash", "-c", params.Script)
 	output, err := cmd.CombinedOutput()
-	fmt.Printf("Output:\n%s\n", output)
+	t.terminal.Write(fmt.Sprintf("Output:\n%s\n", output))
 	if err != nil {
 		return string(output), err
 	}
-	fmt.Printf("Output:\n%s\n", output)
 	if len(output) > 10000 {
 		return string(output[:10000]) + "\nOutput truncated, full output is printed for the user", nil
 	}
@@ -62,11 +61,14 @@ func (t *Tools) confirmExecution(params ScriptParams) error {
 	if t.skipExecutionConfirmation {
 		return nil
 	}
-	reader := bufio.NewReader(os.Stdin)
-	printLnCyan(fmt.Sprintf("About to execute:\n%s\nDo you want to proceed? (y/n):", params.Script))
-	text, _ := reader.ReadString('\n')
+	t.terminal.WriteWarning(fmt.Sprintf("About to execute:\n%s\nDo you want to proceed? (y/n) :", params.Script))
+	text, err := t.terminal.Read()
+	if err != nil {
+		return err
+	}
 	text = strings.Replace(text, "\n", "", -1)
-	if strings.ToLower(text) != "y" {
+	text = strings.Trim(text, " ")
+	if strings.ToLower(text) != "y" && strings.ToLower(text) != "yes" {
 		return fmt.Errorf("execution cancelled by user")
 	}
 	return nil
@@ -80,7 +82,7 @@ func (t *Tools) Exec(req openai.ToolCall) openai.ChatCompletionMessage {
 	}
 
 	if req.Type != openai.ToolTypeFunction {
-		fmt.Printf("Unknown tool type: %s\n", req.Type)
+		t.terminal.WriteError(fmt.Sprintf("Unknown tool type: %s\n", req.Type))
 		return response
 	}
 
@@ -95,42 +97,14 @@ func (t *Tools) Exec(req openai.ToolCall) openai.ChatCompletionMessage {
 		content, err := t.execScript(params)
 		if err != nil {
 			response.Content = err.Error()
-			printlnRed(err)
+			t.terminal.WriteError(err.Error())
 			return response
 		}
 		response.Content = content
 		return response
 	}
 
-	fmt.Printf("Unknown tool: %s\n", req.Function.Name)
+	t.terminal.WriteError(fmt.Sprintf("Unknown tool: %s\n", req.Function.Name))
 	response.Content = "Unknown tool"
 	return response
-}
-
-func printlnRed(input ...any) {
-	redColor := "\033[31m"
-	resetColor := "\033[0m"
-	out := []any{redColor}
-	out = append(out, input...)
-	out = append(out, resetColor)
-	fmt.Println(out...)
-}
-
-func printlnGrey(input ...any) {
-	redColor := "\033[90m"
-	resetColor := "\033[0m"
-	out := []any{redColor}
-	out = append(out, input...)
-	out = append(out, resetColor)
-	fmt.Println(out...)
-}
-
-func printLnCyan(input ...any) {
-	cyanColor := "\033[36m"
-	resetColor := "\033[0m"
-	out := []any{cyanColor}
-	out = append(out, input...)
-	out = append(out, resetColor)
-	fmt.Println(out...)
-
 }

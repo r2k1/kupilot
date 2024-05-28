@@ -20,7 +20,7 @@ spec:
             - containerPort: 80
           livenessProbe:
             httpGet:
-              path: /wrong-path
+              path: /health
               port: 80
             initialDelaySeconds: 15
             periodSeconds: 20
