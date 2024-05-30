@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: kupilot
+  name: httpd-deployment
+  labels:
+    app: httpd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpd
+  template:
+    metadata:
+      labels:
+        app: httpd
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: httpd
+          image: httpd:2.4.54
+          ports:
+            - containerPort: 80
