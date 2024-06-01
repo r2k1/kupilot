@@ -1,7 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: kupilot
+  namespace: nginx
   name: nginx
 spec:
   replicas: 1
