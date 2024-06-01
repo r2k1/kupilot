@@ -40,7 +40,9 @@ func NewKupilot(tools *Tools, aiclient *openai.Client, terminal *Terminal, seed 
 }
 
 func (k *Kupilot) Run(ctx context.Context) error {
-	k.terminal.WriteInfo(fmt.Sprintf("Using seed: %d\n", *k.seed))
+	if k.seed != nil {
+		k.terminal.WriteInfo(fmt.Sprintf("Using seed: %d\n", *k.seed))
+	}
 	k.terminal.Write("Hello! Kupilot here, how can I help you?\n")
 	for {
 		userInput, err := k.terminal.Read()

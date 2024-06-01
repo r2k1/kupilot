@@ -2,6 +2,9 @@ version: '3'
 tasks:
   run-local:
     cmds:
+      - go run .
+  run-local-docker:
+    cmds:
       - docker build --load -t ghcr.io/r2k1/kupilot:alpha .
       - docker run --rm -it -e OPENAI_API_KEY=$OPENAI_API_KEY -e KUBECONFIG=/.kube/config -v ~/.kube:/.kube ghcr.io/r2k1/kupilot:alpha kupilot
   docker-push:
