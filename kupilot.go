@@ -16,6 +16,7 @@ type Kupilot struct {
 	openai   *openai.Client
 	msgs     []openai.ChatCompletionMessage
 	terminal *Terminal
+	seed     *int
 }
 
 var SysMessage = openai.ChatCompletionMessage{
@@ -26,16 +27,18 @@ You have read access to the kubernetes cluster. Be concise. Output of every func
 If output is truncated you can modify the script to limit the scope of the output.`,
 }
 
-func NewKupilot(tools *Tools, aiclient *openai.Client, terminal *Terminal) *Kupilot {
+func NewKupilot(tools *Tools, aiclient *openai.Client, terminal *Terminal, seed *int) *Kupilot {
 	return &Kupilot{
 		tools:    tools,
 		openai:   aiclient,
 		msgs:     []openai.ChatCompletionMessage{SysMessage},
 		terminal: terminal,
+		seed:     seed,
 	}
 }
 
 func (k *Kupilot) Run(ctx context.Context) error {
+	k.terminal.WriteInfo(fmt.Sprintf("Using seed: %d\n", *k.seed))
 	k.terminal.Write("Hello! Kupilot here, how can I help you?\n")
 	for {
 		userInput, err := k.terminal.Read()
@@ -61,6 +64,7 @@ func (k *Kupilot) askGPT(ctx context.Context) error {
 	resp, err := k.openai.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
 		Model:    openai.GPT4o,
 		Messages: k.msgs,
+		Seed:     k.seed,
 		Tools: []openai.Tool{
 			{
 				Type: openai.ToolTypeFunction,

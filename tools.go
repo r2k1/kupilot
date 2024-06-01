@@ -104,7 +104,9 @@ func (t *Tools) Exec(req openai.ToolCall) openai.ChatCompletionMessage {
 		return response
 	}
 
-	t.terminal.WriteError(fmt.Sprintf("Unknown tool: %s\n", req.Function.Name))
-	response.Content = "Unknown tool"
+	errMsg := fmt.Sprintf("Invalid tool: %s\n", req.Function.Name)
+	t.terminal.WriteError(errMsg)
+	response.Content = errMsg
+	response.Name = "error"
 	return response
 }

@@ -20,6 +20,7 @@ func main() {
 
 type config struct {
 	OpenAIKey SecretString `env:"OPENAI_API_KEY,notEmpty"`
+	Seed      *int         `env:"SEED"`
 }
 
 type SecretString string
@@ -37,7 +38,7 @@ func do(ctx context.Context, terminal *Terminal) error {
 
 	client := openai.NewClient(string(cfg.OpenAIKey))
 
-	ku := NewKupilot(tools, client, terminal)
+	ku := NewKupilot(tools, client, terminal, cfg.Seed)
 	err := ku.Run(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to run kupilot: %w", err)
