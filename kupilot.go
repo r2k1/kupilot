@@ -17,6 +17,7 @@ type Kupilot struct {
 	msgs     []openai.ChatCompletionMessage
 	terminal *Terminal
 	seed     *int
+	model    string
 }
 
 var SysMessage = openai.ChatCompletionMessage{
@@ -27,13 +28,14 @@ You have read access to the kubernetes cluster. Be concise. Output of every func
 If output is truncated you can modify the script to limit the scope of the output.`,
 }
 
-func NewKupilot(tools *Tools, aiclient *openai.Client, terminal *Terminal, seed *int) *Kupilot {
+func NewKupilot(tools *Tools, aiclient *openai.Client, terminal *Terminal, seed *int, model string) *Kupilot {
 	return &Kupilot{
 		tools:    tools,
 		openai:   aiclient,
 		msgs:     []openai.ChatCompletionMessage{SysMessage},
 		terminal: terminal,
 		seed:     seed,
+		model:    model,
 	}
 }
 

@@ -19,10 +19,12 @@ func main() {
 }
 
 type config struct {
-	OpenAIKey SecretString `env:"OPENAI_API_KEY,notEmpty"`
-	Seed      *int         `env:"SEED"`
+	OpenAIKey   SecretString `env:"OPENAI_API_KEY,notEmpty"`
+	OpenAIModel string       `env:"OPENAI_MODEL" envDefault:"gpt-4o"`
+	Seed        *int         `env:"SEED"`
 }
 
+// SecretString is a string that should not be printed, avoid accidental logging
 type SecretString string
 
 func (s SecretString) String() string {
@@ -38,7 +40,7 @@ func do(ctx context.Context, terminal *Terminal) error {
 
 	client := openai.NewClient(string(cfg.OpenAIKey))
 
-	ku := NewKupilot(tools, client, terminal, cfg.Seed)
+	ku := NewKupilot(tools, client, terminal, cfg.Seed, cfg.OpenAIModel)
 	err := ku.Run(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to run kupilot: %w", err)
