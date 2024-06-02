@@ -22,8 +22,9 @@ tasks:
   connect:
     cmds:
       - kubectl -n kupilot exec -it $(kubectl get pods -n kupilot -l app=kupilot -o jsonpath='{.items[0].metadata.name}') -- kupilot
-
   record-gif:
     cmds:
       - vhs docs/debug-nginx-healthcheck.tape
-
+  release:
+    cmds:
+      - goreleaser release

@@ -1,0 +1,75 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 1
+
+project_name: kupilot
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+    - go test ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+dockers:
+  -
+    image_templates:
+      - "gcr.io/r2k1/kupilot:{{ .Version }}-amd64"
+      - "gcr.io/r2k1/kupilot:latest-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    goarch: amd64
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - image_templates:
+      - "gcr.io/r2k1/kupilot:{{ .Version }}-arm64"
+      - "gcr.io/r2k1/kupilot:latest-arm64"
+    dockerfile: Dockerfile
+    use: buildx
+    goarch: arm64
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+
+docker_manifests:
+  -
+    id: "kupilot:{{ .Version }}"
+    name_template: "gcr.io/r2k1/kupilot:{{ .Version }}"
+    image_templates:
+      - "gcr.io/r2k1/kupilot:{{.Version}}-arm64"
+  -
+    id: "kupilot:latest"
+    name_template: "gcr.io/r2k1/kupilot:latest"
+    image_templates:
+      - "gcr.io/r2k1/kupilot:latest-amd64"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
