@@ -2,7 +2,7 @@
 
 Kupilot is a command-line tool that provides Kubernetes support using OpenAI's GPT models. It's designed to offer instant help with Kubernetes questions and operations through an interactive terminal interface.
 
-![Kupilot Demo](docs/debug-nginx-healthcheck.gif)
+![Kupilot Demo](docs/demo.gif)
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ Warning. Kupilot may have write access to your Kubernetes cluster. Validate and 
 
 ```bash
 export OPENAI_API_KEY=<your-openai-api-key>
-docker run --rm -it -e OPENAI_API_KEY=$OPENAI_API_KEY -e KUBECONFIG=/.kube/config -v ~/.kube:/.kube ghcr.io/r2k1/kupilot:alpha kupilot
+docker run --rm -it -e OPENAI_API_KEY=$OPENAI_API_KEY -e KUBECONFIG=/.kube/config -v ~/.kube:/.kube ghcr.io/r2k1/kupilot:latest kupilot
 ```
 
 ### Run in Kubernetes
