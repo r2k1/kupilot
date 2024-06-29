@@ -59,12 +59,14 @@ docker_manifests:
     id: "kupilot:{{ .Version }}"
     name_template: "ghcr.io/r2k1/kupilot:{{ .Version }}"
     image_templates:
+      - "ghcr.io/r2k1/kupilot:{{.Version}}-amd64"
       - "ghcr.io/r2k1/kupilot:{{.Version}}-arm64"
   -
     id: "kupilot:latest"
     name_template: "ghcr.io/r2k1/kupilot:latest"
     image_templates:
       - "ghcr.io/r2k1/kupilot:latest-amd64"
+      - "ghcr.io/r2k1/kupilot:latest-arm64"
 
 changelog:
   sort: asc
