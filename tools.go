@@ -14,13 +14,6 @@ type Tools struct {
 	terminal                  *Terminal
 }
 
-func NewTools(terminal *Terminal) *Tools {
-	return &Tools{
-		skipExecutionConfirmation: false,
-		terminal:                  terminal,
-	}
-}
-
 var ToolsSchema = schema()
 
 func schema() []byte {

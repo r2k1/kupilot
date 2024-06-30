@@ -8,8 +8,9 @@ import (
 )
 
 type Terminal struct {
-	in  io.Reader
-	out io.Writer
+	in      io.Reader
+	out     io.Writer
+	noColor bool
 }
 
 const (
@@ -20,31 +21,32 @@ const (
 	Blue   = "\033[34m"
 )
 
-func NewTerminal(in io.Reader, out io.Writer) *Terminal {
-	return &Terminal{
-		in:  in,
-		out: out,
-	}
-}
-
 func (t *Terminal) Write(message string) {
 	_, _ = fmt.Fprintf(t.out, message)
 }
 
 func (t *Terminal) WriteError(message string) {
-	_, _ = fmt.Fprintf(t.out, Red+message+Reset)
+	t.writeColor(Red, message)
 }
 
 func (t *Terminal) WriteInfo(message string) {
-	_, _ = fmt.Fprintf(t.out, Green+message+Reset)
+	t.writeColor(Green, message)
 }
 
 func (t *Terminal) WriteWarning(message string) {
-	_, _ = fmt.Fprintf(t.out, Yellow+message+Reset)
+	t.writeColor(Yellow, message)
 }
 
 func (t *Terminal) WriteDebug(message string) {
-	_, _ = fmt.Fprintf(t.out, Blue+message+Reset)
+	t.writeColor(Blue, message)
+}
+
+func (t *Terminal) writeColor(color string, message string) {
+	if t.noColor {
+		t.Write(message)
+		return
+	}
+	t.Write(color + message + Reset)
 }
 
 func (t *Terminal) Read() (string, error) {
@@ -59,5 +61,4 @@ func (t *Terminal) Read() (string, error) {
 		os.Exit(0)
 	}
 	return userInput, nil
-
 }

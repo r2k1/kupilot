@@ -13,11 +13,17 @@ import (
 
 type Kupilot struct {
 	tools    *Tools
-	openai   *openai.Client
+	openai   OpenAIClient
 	msgs     []openai.ChatCompletionMessage
 	terminal *Terminal
 	seed     *int
 	model    string
+	noColor  bool
+}
+
+//go:generate moq -out open_ai_client_moq_test.go . OpenAIClient
+type OpenAIClient interface {
+	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (openai.ChatCompletionResponse, error)
 }
 
 var SysMessage = openai.ChatCompletionMessage{
@@ -28,7 +34,7 @@ You have read access to the kubernetes cluster. Be concise. Output of every func
 If output is truncated you can modify the script to limit the scope of the output.`,
 }
 
-func NewKupilot(tools *Tools, aiclient *openai.Client, terminal *Terminal, seed *int, model string) *Kupilot {
+func NewKupilot(tools *Tools, aiclient OpenAIClient, terminal *Terminal, seed *int, model string, noColor bool) *Kupilot {
 	return &Kupilot{
 		tools:    tools,
 		openai:   aiclient,
@@ -36,6 +42,7 @@ func NewKupilot(tools *Tools, aiclient *openai.Client, terminal *Terminal, seed 
 		terminal: terminal,
 		seed:     seed,
 		model:    model,
+		noColor:  noColor,
 	}
 }
 
@@ -66,7 +73,7 @@ func (k *Kupilot) askGPT(ctx context.Context) error {
 	_ = s.Color("cyan")
 	s.Start()
 	resp, err := k.openai.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model:    openai.GPT4o,
+		Model:    k.model,
 		Messages: k.msgs,
 		Seed:     k.seed,
 		Tools: []openai.Tool{
@@ -87,12 +94,7 @@ func (k *Kupilot) askGPT(ctx context.Context) error {
 
 	agentMsg := resp.Choices[0].Message
 
-	out, err := glamour.Render(agentMsg.Content, "dark")
-	if err != nil {
-		k.terminal.Write(agentMsg.Content)
-	} else {
-		k.terminal.Write(out)
-	}
+	k.writeMessage(agentMsg)
 
 	k.msgs = append(k.msgs, agentMsg)
 
@@ -106,4 +108,15 @@ func (k *Kupilot) askGPT(ctx context.Context) error {
 	}
 	k.msgs = append(k.msgs, toolMsgs...)
 	return k.askGPT(ctx)
+}
+
+func (k *Kupilot) writeMessage(agentMsg openai.ChatCompletionMessage) {
+	if !k.noColor {
+		out, err := glamour.Render(agentMsg.Content, "dark")
+		if err == nil {
+			k.terminal.Write(out)
+			return
+		}
+	}
+	k.terminal.Write(agentMsg.Content)
 }

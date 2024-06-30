@@ -10,7 +10,11 @@ import (
 )
 
 func main() {
-	t := NewTerminal(os.Stdin, os.Stdout)
+	t := &Terminal{
+		in:      os.Stdin,
+		out:     os.Stdout,
+		noColor: false,
+	}
 	err := do(context.Background(), t)
 	if err != nil {
 		t.WriteError(err.Error())
@@ -36,11 +40,14 @@ func do(ctx context.Context, terminal *Terminal) error {
 	if err := env.Parse(&cfg); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
-	tools := NewTools(terminal)
+	tools := &Tools{
+		skipExecutionConfirmation: false,
+		terminal:                  terminal,
+	}
 
 	client := openai.NewClient(string(cfg.OpenAIKey))
 
-	ku := NewKupilot(tools, client, terminal, cfg.Seed, cfg.OpenAIModel)
+	ku := NewKupilot(tools, client, terminal, cfg.Seed, cfg.OpenAIModel, false)
 	err := ku.Run(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to run kupilot: %w", err)
