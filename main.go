@@ -10,14 +10,9 @@ import (
 )
 
 func main() {
-	t := &Terminal{
-		in:      os.Stdin,
-		out:     os.Stdout,
-		noColor: false,
-	}
-	err := do(context.Background(), t)
+	err := do(context.Background())
 	if err != nil {
-		t.WriteError(err.Error())
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }
@@ -26,6 +21,7 @@ type config struct {
 	OpenAIKey   SecretString `env:"OPENAI_API_KEY,notEmpty"`
 	OpenAIModel string       `env:"OPENAI_MODEL" envDefault:"gpt-4o"`
 	Seed        *int         `env:"SEED"`
+	NoColor     bool         `env:"NO_COLOR"`
 }
 
 // SecretString is a string that should not be printed, avoid accidental logging
@@ -35,19 +31,32 @@ func (s SecretString) String() string {
 	return "[REDACTED]"
 }
 
-func do(ctx context.Context, terminal *Terminal) error {
+func do(ctx context.Context) error {
 	var cfg config
 	if err := env.Parse(&cfg); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
+	}
+	terminal := &Terminal{
+		in:      os.Stdin,
+		out:     os.Stdout,
+		noColor: cfg.NoColor,
 	}
 	tools := &Tools{
 		skipExecutionConfirmation: false,
 		terminal:                  terminal,
 	}
 
-	client := openai.NewClient(string(cfg.OpenAIKey))
+	aiClient := openai.NewClient(string(cfg.OpenAIKey))
 
-	ku := NewKupilot(tools, client, terminal, cfg.Seed, cfg.OpenAIModel, false)
+	ku := &Kupilot{
+		tools:    tools,
+		openai:   aiClient,
+		terminal: terminal,
+		seed:     cfg.Seed,
+		model:    cfg.OpenAIModel,
+		noColor:  cfg.NoColor,
+	}
+
 	err := ku.Run(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to run kupilot: %w", err)

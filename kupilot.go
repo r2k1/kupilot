@@ -38,7 +38,6 @@ func NewKupilot(tools *Tools, aiclient OpenAIClient, terminal *Terminal, seed *i
 	return &Kupilot{
 		tools:    tools,
 		openai:   aiclient,
-		msgs:     []openai.ChatCompletionMessage{SysMessage},
 		terminal: terminal,
 		seed:     seed,
 		model:    model,
@@ -47,6 +46,7 @@ func NewKupilot(tools *Tools, aiclient OpenAIClient, terminal *Terminal, seed *i
 }
 
 func (k *Kupilot) Run(ctx context.Context) error {
+	k.msgs = []openai.ChatCompletionMessage{SysMessage}
 	if k.seed != nil {
 		k.terminal.WriteInfo(fmt.Sprintf("Using seed: %d\n", *k.seed))
 	}
