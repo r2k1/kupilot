@@ -18,10 +18,18 @@ func main() {
 }
 
 type config struct {
-	OpenAIKey   SecretString `env:"OPENAI_API_KEY,notEmpty"`
-	OpenAIModel string       `env:"OPENAI_MODEL" envDefault:"gpt-4o"`
-	Seed        *int         `env:"SEED"`
-	NoColor     bool         `env:"NO_COLOR"`
+	OpenAIKey         SecretString `env:"OPENAI_API_KEY,notEmpty"`
+	OpenAIModel       string       `env:"OPENAI_MODEL" envDefault:"gpt-4o"`
+	AzureOpenAIAPIURL string       `env:"AZURE_OPENAI_API_URL"`
+	Seed              *int         `env:"SEED"`
+	NoColor           bool         `env:"NO_COLOR"`
+}
+
+func (c config) NewAIConfig() openai.ClientConfig {
+	if c.AzureOpenAIAPIURL != "" {
+		return openai.DefaultAzureConfig(string(c.OpenAIKey), c.AzureOpenAIAPIURL)
+	}
+	return openai.DefaultConfig(string(c.OpenAIKey))
 }
 
 // SecretString is a string that should not be printed, avoid accidental logging
@@ -46,7 +54,7 @@ func do(ctx context.Context) error {
 		terminal:                  terminal,
 	}
 
-	aiClient := openai.NewClient(string(cfg.OpenAIKey))
+	aiClient := openai.NewClientWithConfig(cfg.NewAIConfig())
 
 	ku := &Kupilot{
 		tools:    tools,
