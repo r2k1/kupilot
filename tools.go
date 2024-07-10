@@ -14,10 +14,24 @@ type Tools struct {
 	terminal                  *Terminal
 }
 
-var ToolsSchema = schema()
-
-func schema() []byte {
-	return []byte(`{"properties":{"script":{"type":"string","description":"The bash script to run"}},"additionalProperties":false,"type":"object","required":["script"]}`)
+var ToolsSchema = []openai.Tool{
+	{
+		Type: "function",
+		Function: &openai.FunctionDefinition{
+			Name:        "script",
+			Description: "Run a bash script, full output is printed for the user but can be truncated for the agent",
+			Parameters: map[string]any{
+				"properties": map[string]any{
+					"script": map[string]any{
+						"type":        "string",
+						"description": "The bash script to run",
+					},
+				},
+				"type":     "object",
+				"required": []string{"script"},
+			},
+		},
+	},
 }
 
 func (t *Tools) Call(requests []openai.ToolCall) ([]openai.ChatCompletionMessage, error) {
@@ -30,7 +44,7 @@ func (t *Tools) Call(requests []openai.ToolCall) ([]openai.ChatCompletionMessage
 }
 
 type ScriptParams struct {
-	Script string `json:"script" jsonschema:"description=The bash script to run"`
+	Script string `json:"script"`
 }
 
 func (t *Tools) execScript(params ScriptParams) (string, error) {

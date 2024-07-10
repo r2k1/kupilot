@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -76,16 +75,7 @@ func (k *Kupilot) askGPT(ctx context.Context) error {
 		Model:    k.model,
 		Messages: k.msgs,
 		Seed:     k.seed,
-		Tools: []openai.Tool{
-			{
-				Type: openai.ToolTypeFunction,
-				Function: &openai.FunctionDefinition{
-					Name:        "script",
-					Description: "Run a bash script, full output is printed for the user but can be truncated for the agent",
-					Parameters:  json.RawMessage(ToolsSchema),
-				},
-			},
-		},
+		Tools:    ToolsSchema,
 	})
 	s.Stop()
 	if err != nil {
